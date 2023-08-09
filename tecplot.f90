@@ -36,11 +36,11 @@ end type tecplot_time_file
 private :: plt_init_sb, plt_write_mesh_sb
 
 contains
-	subroutine plt_init_sb(this, fname, nnx, nny, nnz, title, variables)
+	subroutine plt_init_sb(this, fname, nnx, nny, nnz, title, variables, nball)
 	implicit none
 	class(tecplot_time_file) :: this
 	character(len=*),intent(in) :: fname
-	integer,intent(in) :: nnx,nny,nnz
+	integer,intent(in) :: nnx,nny,nnz,nball
 	character(len=*),intent(in) :: title
 	character(len=*),intent(in) :: variables
 	real(kind=4) :: rand_num
@@ -61,7 +61,7 @@ contains
 	call RANDOM_NUMBER(rand_num)
 	this%sfid = int(rand_num*1000+10)
 	open(unit=this%sfid, status='scratch', form='unformatted', access='stream')
-	call this%write_header(nnx,nny,nnz,title,variables)
+	call this%write_header(nnx,nny,nnz,title,variables,nball)
 	this%isInitialized = .true.
 	this%n_zone_header = 0
 	this%n_zone_data = 0
@@ -135,12 +135,12 @@ contains
 	this%n_zone_data = 0
 	end subroutine plt_complete_sb
 
-	subroutine plt_write_header_sb(this,nnx,nny,nnz,title,variables)
+	subroutine plt_write_header_sb(this,nnx,nny,nnz,title,variables,nball)
 	use string
 	implicit none
 	class(tecplot_file) :: this
 	integer(kind=1) :: temp_int_1
-	integer,intent(in) :: nnx,nny,nnz
+	integer,intent(in) :: nnx,nny,nnz, nball
 	character(len=*),intent(in) :: title
 	character(len=*),intent(in) :: variables
 	type(string_splitter) :: splitter
@@ -162,7 +162,8 @@ contains
 	write(this%fid) temp_int_1
 	write(this%fid) 0
 
-	call this%write_str(title)
+	if (nball == 1) &
+		call this%write_str(title)
 
 	call splitter%splite(variables,',')
 	call splitter%count(this%n_data)
@@ -176,7 +177,8 @@ contains
 		call splitter%next(this%name_variables(i))
 		! write(*,*) this%name_variables(i), len(this%name_variables(i)), &
 		! 		   len_trim(this%name_variables(i))
-		call this%write_str(this%name_variables(i))
+		if (nball == 1) &
+			call this%write_str(this%name_variables(i))
 	enddo
 	this%headerWrote = .true.
 	end subroutine plt_write_header_sb
